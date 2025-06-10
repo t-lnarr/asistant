@@ -228,7 +228,6 @@ def bilgi_sorusu_var_mi(mesaj):
 async def start_bot():
     app = ApplicationBuilder().token(TOKEN).build()
 
-    # Komut handler'larını ekle
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("hava", hava))
     app.add_handler(CommandHandler("sohbet", sohbet))
@@ -239,10 +238,10 @@ async def start_bot():
 
     print("Bot Railway’de çalışıyor...")
 
-    # Burada run_polling ile event loop başlıyor
-    await app.initialize()
-    await schedule_jobs(app)  # <-- Artık async oldu!
-    await app.start()
-    await app.updater.start_polling()
-    await app.updater.idle()
+    # Scheduler'ı başlat
+    await schedule_jobs(app)
+
+    # polling başlat, kendi içinde idle çalıştırır
+    await app.run_polling()
+
 
