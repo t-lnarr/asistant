@@ -181,19 +181,20 @@ async def send_good_night(app, chat_id):
     mesaj = "İyi geceler! 🌙 Yarın görüşmek üzere."
     await app.bot.send_message(chat_id=chat_id, text=mesaj)
 
-def schedule_jobs(app):
-    chat_id = 7172270461
+async def schedule_jobs(app):
+    chat_ids = [7172270461, 1234567890]
 
-    scheduler.add_job(send_good_morning, 'cron', hour=8, minute=0, args=[app, chat_id])
-    scheduler.add_job(send_news, 'cron', hour=10, minute=0, args=[app, chat_id])
-    scheduler.add_job(send_fact, 'cron', hour=12, minute=0, args=[app, chat_id])
-    scheduler.add_job(send_joke, 'cron', hour=14, minute=0, args=[app, chat_id])
-    scheduler.add_job(send_news, 'cron', hour=16, minute=0, args=[app, chat_id])
-    scheduler.add_job(send_evening_weather, 'cron', hour=18, minute=0, args=[app, chat_id])
-    scheduler.add_job(send_joke, 'cron', hour=20, minute=0, args=[app, chat_id])
-    scheduler.add_job(send_good_night, 'cron', hour=22, minute=0, args=[app, chat_id])
+    scheduler.add_job(send_good_morning, 'cron', hour=8, minute=0, args=[app, chat_ids])
+    scheduler.add_job(send_news, 'cron', hour=10, minute=0, args=[app, chat_ids])
+    scheduler.add_job(send_fact, 'cron', hour=12, minute=0, args=[app, chat_ids])
+    scheduler.add_job(send_joke, 'cron', hour=14, minute=0, args=[app, chat_ids])
+    scheduler.add_job(send_news, 'cron', hour=16, minute=0, args=[app, chat_ids])
+    scheduler.add_job(send_evening_weather, 'cron', hour=18, minute=0, args=[app, chat_ids])
+    scheduler.add_job(send_joke, 'cron', hour=20, minute=0, args=[app, chat_ids])
+    scheduler.add_job(send_good_night, 'cron', hour=22, minute=0, args=[app, chat_ids])
 
     scheduler.start()
+
 
 
 
@@ -224,10 +225,10 @@ def bilgi_sorusu_var_mi(mesaj):
     return any(kw in mesaj for kw in ["ilginç bilgi", "bilgi", "fakt"])
 
 
-def start_bot():
+async def start_bot():
     app = ApplicationBuilder().token(TOKEN).build()
 
-    # Handlerlar
+    # Komut handler'larını ekle
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("hava", hava))
     app.add_handler(CommandHandler("sohbet", sohbet))
@@ -236,11 +237,12 @@ def start_bot():
     app.add_handler(CommandHandler("bilgi", bilgi))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    # Job queue ile günlük job çalıştırma (örnek)
-    app.job_queue.run_daily(scheduled_job, time=datetime.time(hour=9, minute=0))
+    print("Bot Railway’de çalışıyor...")
 
-    # Senin AsyncIOScheduler kullanman yerine Telegram botun kendi job queue'su genelde yeterli olur
-    schedule_jobs(app)  # Eklemeyi unutma
+    # Burada run_polling ile event loop başlıyor
+    await app.initialize()
+    await schedule_jobs(app)  # <-- Artık async oldu!
+    await app.start()
+    await app.updater.start_polling()
+    await app.updater.idle()
 
-    print("Bot çalışıyor...")
-    app.run_polling()
