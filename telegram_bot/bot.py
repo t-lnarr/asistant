@@ -181,8 +181,8 @@ async def send_good_night(app, chat_id):
     mesaj = "İyi geceler! 🌙 Yarın görüşmek üzere."
     await app.bot.send_message(chat_id=chat_id, text=mesaj)
 
-async def schedule_jobs(app):
-    chat_ids = [7172270461, 1234567890]
+def schedule_jobs(app):
+    chat_ids = [7172270461]
 
     scheduler.add_job(send_good_morning, 'cron', hour=8, minute=0, args=[app, chat_ids])
     scheduler.add_job(send_news, 'cron', hour=10, minute=0, args=[app, chat_ids])
@@ -194,6 +194,7 @@ async def schedule_jobs(app):
     scheduler.add_job(send_good_night, 'cron', hour=22, minute=0, args=[app, chat_ids])
 
     scheduler.start()
+
 
 
 
@@ -225,7 +226,7 @@ def bilgi_sorusu_var_mi(mesaj):
     return any(kw in mesaj for kw in ["ilginç bilgi", "bilgi", "fakt"])
 
 
-async def start_bot():
+def start_bot():
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -236,12 +237,9 @@ async def start_bot():
     app.add_handler(CommandHandler("bilgi", bilgi))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
+    schedule_jobs(app)  # scheduler'ı normal fonksiyon olarak başlat
+
     print("Bot Railway’de çalışıyor...")
-
-    # Scheduler'ı başlat
-    await schedule_jobs(app)
-
-    # polling başlat, kendi içinde idle çalıştırır
-    await app.run_polling()
+    app.run_polling()  # Artık async değil
 
 
